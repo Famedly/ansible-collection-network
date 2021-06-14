@@ -1,0 +1,17 @@
+[Interface]
+Address =  {{ item.ip_address_cidr if item.ip_address_cidr is defined else (item.ip_address + '/' + item.direct_peer_subnet)
+ListenPort = {{ item.port }}
+PrivateKey = {{ privkeys[item.iface_name] }}
+{% if item.mtu is defined %}
+MTU = {{ item.mtu }}
+{% endif %}
+
+{% for peer in item.peers %}
+[Peer]
+PublicKey = {{ hostvars[peer].pubkeys[item.iface_name] }}
+{% if item.psk_enabled %}
+PreSharedKey = {{ hostvars[peer].pre_shared_keys[item.iface_name] }}
+{% endif %}
+AllowedIPs = {{ item.ip_address_cidr if item.ip_address_cidr is defined else (item.direct_peer + '/32') }}
+Endpoint = {{ hostvars[peer].wg_ifaces | selectattr('iface_name', 'equalto', item.iface_name) | map(attribute='peering_ip') | first }}:{{ hostvars[peer].wg_ifaces | selectattr('iface_name', 'equalto', item.iface_name) | map(attribute='port') | first }}
+{% endfor %}

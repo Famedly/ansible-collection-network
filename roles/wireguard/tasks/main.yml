@@ -1,0 +1,13 @@
+---
+
+- include_tasks: install.yml
+
+- name: Handle the public/private key generation
+  include_tasks: key-generation.yml
+  when: item.handle_key_generation|bool
+  loop: "{{ wg_ifaces }}"
+
+- name: Setup the wireguard interfaces and bring them up
+  include_tasks: network-config.yml
+  loop: "{{ wg_ifaces }}"
+
