@@ -1,37 +1,18 @@
 ---
-
-- name: Check that direct peers do not have a cidr set
-  fail:
-    msg: Setting a subnet is not allowed for direct peers
-  when: (item.ip_address is defined and item.direct_peer is defined) and item.ip_address_cidr is defined
-
-- name: Check that mesh peers do not have a direct peer set
-  fail:
-    msg: Setting a subnet is not allowed for direct peers
-  when: item.ip_address_cidr is defined and (item.ip_address is defined and item.direct_peer is defined)
-
-- name: Create wireguard interfaces
-  shell: ([[ `ip link | grep {{ item.iface_name }}: | wc -l` -eq 1 ]]) || ip link add dev {{ item.iface_name }} type wireguard
-  loop: "{{ wg_ifaces }}"
-
-- name: Assign IPs on the interface (direct peers)
-  shell: ip address add dev {{ item.iface_name }} {{ item.ip_address }} peer {{ item.direct_peer }}
-  loop: "{{ wg_ifaces }}"
-
-- name: Assign IPs on the interface (multiple peers)
-  shell: ip address add dev {{ item.iface_name }} {{ item.ip_address_cidr }}
-  loop: "{{ wg_ifaces }}"
-
-- name: Template configs for interfaces
+- name: Template config for interface {{ item.iface_name }}
   template:
     dest: "{{ wg_basedir }}/{{ item.iface_name }}.conf"
     src: iface_config.conf.j2
-  loop: "{{ wg_ifaces }}"
+  register: wg_config_template
 
-- name: Load interface configuration
-  shell: wg setconf {{ item.iface_name}} {{ wg_basedir }}/{{ item.iface_name }}.conf
-  loop: "{{ wg_ifaces }}"
+- name: restart wg-quick@{{ item.iface_name }} if config changed
+  systemd:
+    name: wg-quick@{{ item.iface_name }}
+    state: restarted
+  when: wg_config_template.changed
 
-- name: Bring interface up
-  command: ip link set up dev {{ item.iface_name }}
-  loop: "{{ wg_ifaces }}"
+- name: Set systemd unit state for wg-quick@{{ item.iface_name }}
+  systemd:
+    name: "wg-quick@{{ item.iface_name }}"
+    state: "{{ item.systemd_unit_state | default('started') }}"
+    enabled: "{{ item.systemd_unit_enabled | default('true') }}"

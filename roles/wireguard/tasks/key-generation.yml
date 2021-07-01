@@ -2,7 +2,7 @@
 
 - name: Check if private key for {{ item.iface_name }} is already present
   stat:
-    path: "{{ item.privkey_file }}"
+    path: "{{ wg_privkey_file }}"
   register: wg_generated_privkey_present
 
 - name: Generate private key for {{ item.iface_name }}
@@ -12,54 +12,54 @@
 
 - name: Save private key for {{ item.iface_name }}
   copy:
-    dest: "{{ item.privkey_file }}"
+    dest: "{{ wg_privkey_file }}"
     content: "{{ wg_generated_privkey.stdout }}"
+    mode: 0600
   when: not wg_generated_privkey_present.stat.exists
 
 - name: Load privkey from host for {{ item.iface_name }}
   slurp:
-    src: "{{ item.privkey_file }}"
+    src: "{{ wg_privkey_file }}"
   register: wg_existing_privkey
   when: wg_generated_privkey_present.stat.exists
 
 - name: Set privkey as fact for config templating for {{ item.iface_name }}
   set_fact:
-    wg_privkeys: "{{ wg_prikeys|default({}) | combine({ item.iface_name: privkey }) }}"
+    wg_privkeys: "{{ wg_privkeys|default({}) | combine({ item.iface_name: privkey }) }}"
   vars:
-    privkey: "{{ wg_existing_privkey['content'] | b64decode if wg_generated_privkey_present else wg_generated_privkey.stdout }}"
-
+    privkey: "{{ wg_existing_privkey['content'] | b64decode if wg_generated_privkey_present.stat.exists else wg_generated_privkey.stdout }}"
 
 - name: Check if public key for {{ item.iface_name }} is already present
   stat:
-    path: "{{ item.pubkey_file }}"
+    path: "{{ wg_pubkey_file }}"
   register: wg_generated_pubkey_present
 
-- name: If public key is missing, but private key is present, load private key from host
+- name: Load private key from host
   block:
     - name: Load privkey from host
       slurp:
-        src: "{{ item.privkey_file }}"
+        src: "{{ wg_privkey_file }}"
       register: wg_existing_privkey
     - name: Save privkey to variable
       set_fact:
         wg_generated_privkey:
           stdout: "{{ wg_existing_privkey['content'] | b64decode }}"
-  when: wg_generated_privkey_present.stat.exists and not wg_generated_pubkey_present.stat.exists
+  when: wg_generated_privkey_present.stat.exists
 
 - name: Generate public key for {{ item.iface_name }}
-  shell: echo -n "{{ wg_generated_privkey.stdout }}" > wg pubkey
+  shell: echo -n "{{ wg_generated_privkey.stdout }}" | wg pubkey
   register: wg_generated_pubkey
-  when: not wg_generated_pubkey_present.stat.exists
+  changed_when: false
 
 - name: Save public key for {{ item.iface_name }}
   copy:
-    dest: "{{ item.pubkey_file }}"
+    dest: "{{ wg_pubkey_file }}"
     content: "{{ wg_generated_pubkey.stdout }}"
-  when: not wg_generated_pubkey_present.stat.exists
+    mode: 0600
 
 - name: Load pubkey from host for {{ item.iface_name }}
   slurp:
-    src: "{{ item.pubkey_file }}"
+    src: "{{ wg_pubkey_file }}"
   register: wg_existing_pubkey
   when: wg_generated_pubkey_present.stat.exists
 
@@ -67,4 +67,4 @@
   set_fact:
     wg_pubkeys: "{{ wg_pubkeys|default({}) | combine({ item.iface_name: pubkey }) }}"
   vars:
-    pubkey: "{{ wg_existing_pubkey['content'] | b64decode if wg_generated_pubkey_present else wg_generated_pubkey.stdout }}"
+    pubkey: "{{ wg_existing_pubkey['content'] | b64decode if wg_generated_pubkey_present.stat.exists else wg_generated_pubkey.stdout }}"

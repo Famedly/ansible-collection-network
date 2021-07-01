@@ -2,12 +2,12 @@
 
 wg_basedir: /etc/wireguard
 
+wg_privkey_file: "{{wg_basedir}}/{{ item.iface_name }}_privkey"
+wg_pubkey_file: "{{wg_basedir}}/{{ item.iface_name }}_pubkey"
+
 wg_ifaces: []
-# - iface_name: wg0
-#   ip_address: 192.168.2.1
-#   direct_peer: 192.168.2.2
-#   direct_peer_subnet: 31
-#   ip_address_cidr: 192.168.2.1/24
-#   peering_ip: my_public_ip
-#   port: 51820
-#   peers: []
+  #- iface_name: wg0
+    #ip_address: 192.168.2.1/24
+    #peering_ip: 10.10.10.10
+    #port: 51820
+    #peers: []
