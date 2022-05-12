@@ -9,26 +9,25 @@ galaxy_info:
 
   platforms:
     - name: Void Linux
-      versions:
-        - any
+      versions: [ any ]
     - name: Debian
       versions:
-        - jessie
         - stretch
         - buster
-        - sid
+        - bullseye
     - name: Fedora
       versions:
-        - 28
-        - 29
+        - 35
+        - 36
     - name: Ubuntu
       versions:
-        - xenial
         - bionic
-        - cosmic
+        - focal
+        - hirsute
+        - impish
+        - jammy
     - name: ArchLinux # Depends on some aur tool
-      versions:
-        - any
+      versions: [ any ]
 
   galaxy_tags: []
 
