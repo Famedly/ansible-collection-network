@@ -11,4 +11,7 @@
 - import_tasks: install/arch.yml
   when: ansible_os_family == "Archlinux"
 
+- import_tasks: install/alpine.yml
+  when: ansible_os_family == "Alpine"
+
 # TODO: Support more distros (and maybe even Windows one day)

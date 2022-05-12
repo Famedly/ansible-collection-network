@@ -28,6 +28,8 @@ galaxy_info:
         - jammy
     - name: ArchLinux # Depends on some aur tool
       versions: [ any ]
+    - name: Alpine
+      versions: [ any ]
 
   galaxy_tags: []
 
