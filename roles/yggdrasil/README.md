@@ -5,12 +5,6 @@ yggdrasil
 
 Deploy yggdrasil using Ansible.
 
-Dependencies
-------------
-
-`ansible_lsb` needs additional packages on some systems,
-those need to be available
-
 
 Role Variables
 --------------

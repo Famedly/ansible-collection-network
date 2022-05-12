@@ -5,7 +5,7 @@
     name: yggdrasil
     enabled: true
     state: restarted
-  when: ansible_lsb.id != "Void"
+  when: ansible_os_family != "Void"
   listen: restart yggdrasil
 
 - name: restart yggdrasil using runit
@@ -13,5 +13,5 @@
     name: yggdrasil
     enabled: true
     state: restarted
-  when: ansible_lsb.id == "Void"
+  when: ansible_os_family == "Void"
   listen: restart yggdrasil
