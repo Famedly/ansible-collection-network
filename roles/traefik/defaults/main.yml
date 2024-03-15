@@ -14,6 +14,7 @@ traefik_enable_http3: false
 traefik_enable_docker: true
 traefik_enable_api: true
 traefik_enable_api_tls: true
+traefik_api_tls_domains: ~
 traefik_enable_api_dashboard: true
 traefik_enable_api_debug: false
 traefik_enable_api_authentication: false
@@ -187,3 +188,40 @@ traefik_config_tls_default_strict:
     minVersion: "VersionTLS13"
     sniStrict: true
     preferServerCipherSuites: true
+
+
+traefik_dashboard_config:
+  http: >-2
+    {{
+      traefik_dashboard_config_base
+      | combine(traefik_enable_api_authentication | ternary(traefik_dashboard_auth_middleware, {}), recursive=true)
+      | combine(traefik_enable_api_tls | ternary(traefik_dashboard_config_tls, {}), recursive=true)
+    }}
+
+traefik_dashboard_config_base:
+  routers:
+    api:
+      rule: Host(`{{ traefik_api_host }}`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))
+      entryPoints:
+        - "{{ traefik_api_entrypoint }}"
+      service: api@internal
+
+traefik_dashboard_auth_middleware:
+  routers:
+    api:
+      middlewares:
+        - "apiAuth"
+  middlewares:
+    apiAuth:
+      basicAuth:
+        usersFile: "{{ traefik_api_users_file }}"
+
+traefik_dashboard_config_tls:
+  routers:
+    api:
+      tls: >-2
+        {{
+          {}
+          | combine(traefik_manual_tls_management_enabled | ternary({}, {"certResolver": "letsencrypt"}), recursive=true)
+          | combine((not traefik_manual_tls_management_enabled and traefik_api_tls_domains) | ternary(traefik_api_tls_domains, {}), recursive=true)
+        }}
